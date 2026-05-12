@@ -32,7 +32,7 @@
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             width: 100%;
-            max-width: 600px;
+            max-width: 700px;
             text-align: center;
         }
 
@@ -90,7 +90,7 @@
             margin-top: 25px;
             margin-bottom: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            gap: 12px;
+            gap: 10px;
             flex-wrap: wrap;
         }
         
@@ -98,8 +98,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            padding: 10px 18px;
+            gap: 6px;
+            padding: 10px 15px;
             border-radius: 8px;
             text-decoration: none;
             font-weight: 700;
@@ -107,9 +107,9 @@
             background: #f8fafc;
             border: 1px solid #cbd5e1;
             flex: 1;
-            min-width: 120px;
+            min-width: 100px;
             transition: all 0.3s;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
 
         .engine-tab svg { width: 18px; height: 18px; }
@@ -124,6 +124,7 @@
         .engine-tab.bing:hover { background: #0089D6; box-shadow: 0 4px 10px rgba(0,137,214,0.3); }
         .engine-tab.yandex:hover { background: #FC3F1D; box-shadow: 0 4px 10px rgba(252,63,29,0.3); }
         .engine-tab.pinterest:hover { background: #E60023; box-shadow: 0 4px 10px rgba(230,0,35,0.3); }
+        .engine-tab.tineye:hover { background: #111827; box-shadow: 0 4px 10px rgba(17,24,39,0.3); } /* لون TinEye */
 
         #results {
             margin-top: 10px;
@@ -239,6 +240,10 @@
             <b style="color: #FC3F1D; font-size:16px;">Y!</b>
             Yandex
         </a>
+        <a id="tineyeLink" href="#" target="_blank" class="engine-tab tineye">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            TinEye
+        </a>
         <a id="pinterestLink" href="https://www.pinterest.com/" target="_blank" class="engine-tab pinterest">
             <svg viewBox="0 0 24 24"><path fill="#E60023" d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345l-.288 1.148c-.043.167-.145.205-.321.123-1.198-.559-1.949-2.313-1.949-3.718 0-3.023 2.196-5.795 6.326-5.795 3.321 0 5.9 2.364 5.9 5.525 0 3.303-2.08 5.962-4.969 5.962-1.011 0-1.961-.525-2.285-1.144l-.622 2.373c-.226.862-.835 1.94-1.246 2.599 1.002.308 2.066.473 3.159.473 6.621 0 11.988-5.367 11.988-11.987C24.005 5.367 18.638 0 12.017 0z"/></svg>
             Pinterest
@@ -301,10 +306,15 @@
             searchBtn.style.display = 'block';
 
             if (data.image_url) {
+                // تفعيل كل الروابط بمجرد رفع الصورة
                 document.getElementById('googleLink').href = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(data.image_url)}`;
                 document.getElementById('bingLink').href = `https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIIRP&sbisrc=UrlPaste&q=imgurl:${encodeURIComponent(data.image_url)}`;
                 document.getElementById('yandexLink').href = `https://yandex.com/images/search?rpt=imageview&url=${encodeURIComponent(data.image_url)}`;
                 
+                // رابط TinEye الجديد
+                document.getElementById('tineyeLink').href = `https://tineye.com/search?url=${encodeURIComponent(data.image_url)}`;
+                
+                // رسالة Pinterest المتظبطة
                 document.getElementById('pinterestLink').onclick = function() {
                     alert("يا هندسة، بينتريست مبيسمحش بالبحث برابط مباشر من بره زي باقي المواقع.\n\nهيفتحلك الموقع بتاعهم دلوقتي، كل اللي هتعمله إنك تدوس على علامة الكاميرا 📷 في مربع البحث وتختار صورتك اللي عايز تبحث عنها.");
                 };
