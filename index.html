@@ -6,11 +6,27 @@
     <title>الباحث الذكي عن الصور</title>
     <style>
         :root {
+            /* ألوان اللايت مود الأساسية */
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
             --bg: #f1f5f9;
             --text: #1e293b;
             --card: #ffffff;
+            --border: #e2e8f0;
+            --box-bg: #f8fafc;
+            --subtitle: #64748b;
+        }
+
+        /* ألوان الدارك مود */
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-hover: #60a5fa;
+            --bg: #0f172a;
+            --text: #f1f5f9;
+            --card: #1e293b;
+            --border: #334155;
+            --box-bg: #0f172a;
+            --subtitle: #94a3b8;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,6 +40,33 @@
             align-items: center;
             min-height: 100vh;
             padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* زرار الدارك مود */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            border-color: var(--primary);
         }
 
         .container {
@@ -34,24 +77,26 @@
             width: 100%;
             max-width: 800px;
             text-align: center;
+            margin-top: 30px;
+            transition: background-color 0.3s;
         }
 
-        h1 { margin-bottom: 10px; font-size: 1.8rem; color: var(--primary); }
-        p.subtitle { color: #64748b; margin-bottom: 25px; }
+        h1 { margin-bottom: 10px; font-size: 1.8rem; color: var(--primary); transition: color 0.3s; }
+        p.subtitle { color: var(--subtitle); margin-bottom: 25px; transition: color 0.3s; }
 
         .upload-box {
-            border: 2px dashed #cbd5e1;
+            border: 2px dashed var(--border);
             padding: 20px;
             border-radius: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
             margin-bottom: 20px;
-            background: #f8fafc;
+            background: var(--box-bg);
         }
 
         .upload-box:hover {
             border-color: var(--primary);
-            background: #eff6ff;
+            background: var(--card);
         }
 
         #imagesPreviewContainer {
@@ -68,7 +113,7 @@
             aspect-ratio: 1;
             border-radius: 8px;
             overflow: hidden;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border);
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
@@ -87,6 +132,7 @@
             align-items: center; justify-content: center;
             border-radius: 8px;
         }
+        [data-theme="dark"] .loader-on-img { background: rgba(0,0,0,0.6); }
 
         .mini-loader {
             border: 3px solid #f3f3f3;
@@ -112,14 +158,13 @@
         }
 
         .btn:hover { background: var(--primary-hover); }
-        .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+        .btn:disabled { background: var(--subtitle); cursor: not-allowed; }
 
-        /* شريط المحركات الكبير (بيظهر في حالة صورة واحدة بس) */
         .engines-bar {
             display: none;
             justify-content: center;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
+            background: var(--card);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 15px;
             margin-top: 25px;
@@ -138,9 +183,9 @@
             border-radius: 8px;
             text-decoration: none;
             font-weight: 700;
-            color: #475569;
-            background: #f8fafc;
-            border: 1px solid #cbd5e1;
+            color: var(--text);
+            background: var(--box-bg);
+            border: 1px solid var(--border);
             flex: 1;
             min-width: 100px;
             transition: all 0.3s;
@@ -159,10 +204,10 @@
         .engine-tab.bing:hover { background: #0089D6; box-shadow: 0 4px 10px rgba(0,137,214,0.3); }
         .engine-tab.yandex:hover { background: #FC3F1D; box-shadow: 0 4px 10px rgba(252,63,29,0.3); }
         .engine-tab.pinterest:hover { background: #E60023; box-shadow: 0 4px 10px rgba(230,0,35,0.3); }
-        .engine-tab.tineye:hover { background: #111827; box-shadow: 0 4px 10px rgba(17,24,39,0.3); }
+        .engine-tab.tineye:hover { background: #8b5cf6; box-shadow: 0 4px 10px rgba(139,92,246,0.3); }
 
         #results {
-            margin-top: 10px;
+            margin-top: 20px;
             text-align: right;
             display: none;
             width: 100%;
@@ -175,22 +220,22 @@
         }
 
         .image-results-section {
-            border-bottom: 2px solid #e2e8f0;
+            border-bottom: 2px solid var(--border);
             padding-bottom: 20px;
         }
         .image-results-section:last-child { border-bottom: none; }
 
-        /* هيدر كل صورة اللي هنحط فيه الزراير الصغيرة */
         .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 15px;
             padding: 10px;
-            background: #f1f5f9;
+            background: var(--box-bg);
             border-radius: 8px;
             flex-wrap: wrap;
             gap: 10px;
+            border: 1px solid var(--border);
         }
         
         .header-title-box {
@@ -198,10 +243,10 @@
             align-items: center;
             gap: 10px;
             font-weight: bold;
+            color: var(--text);
         }
         .header-title-box img { width: 30px; height: 30px; border-radius: 4px; object-fit: cover; }
 
-        /* الزراير المصغرة للبحث الجماعي */
         .mini-engines {
             display: flex;
             gap: 5px;
@@ -220,14 +265,14 @@
         .bg-google { background: #4285F4; }
         .bg-bing { background: #0089D6; }
         .bg-yandex { background: #FC3F1D; }
-        .bg-tineye { background: #111827; }
+        .bg-tineye { background: #8b5cf6; } /* لون أفتح شوية للدارك مود */
         .bg-pinterest { background: #E60023; }
 
         .result-card {
             display: flex;
             align-items: center;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background: var(--box-bg);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 15px;
             margin-bottom: 15px;
@@ -237,6 +282,7 @@
         .result-card:hover {
             transform: scale(1.02);
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-color: var(--primary);
         }
 
         .result-image {
@@ -245,48 +291,50 @@
             border-radius: 8px;
             object-fit: cover;
             margin-left: 15px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border);
         }
 
         .result-info { flex: 1; }
 
         .result-title {
             font-weight: bold;
-            color: #1e293b;
+            color: var(--text);
             margin-bottom: 10px;
             font-size: 1rem;
         }
         
         .buttons-container {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
             flex-wrap: wrap;
         }
 
         .result-link {
-            color: var(--primary);
+            color: #ffffff;
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 5px;
-            background: #eff6ff;
-            padding: 5px 10px;
+            background: var(--primary);
+            padding: 6px 12px;
             border-radius: 6px;
+            transition: 0.2s;
         }
         
         .img-link {
-            color: #059669;
-            background: #ecfdf5;
+            background: #059669;
         }
 
-        .result-link:hover { background: #dbeafe; }
-        .img-link:hover { background: #d1fae5; }
+        .result-link:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .img-link:hover { background: #047857; transform: translateY(-1px); }
     </style>
 </head>
 <body>
+
+<button id="themeToggle" class="theme-toggle">🌙</button>
 
 <div class="container">
     <h1>الباحث الذكي عن الصور</h1>
@@ -294,8 +342,8 @@
 
     <div class="upload-box" id="dropZone">
         <div id="prompt">
-            <svg style="width:48px;height:48px;color:#94a3b8;margin:auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            <p style="margin-top:10px; font-weight: bold;">اضغط هنا لاختيار الصورة أو الصور سوا</p>
+            <svg style="width:48px;height:48px;color:var(--subtitle);margin:auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <p style="margin-top:10px; font-weight: bold; color: var(--text);">اضغط هنا لاختيار الصورة أو الصور سوا</p>
         </div>
         <input type="file" id="fileInput" hidden accept="image/*" multiple>
         <div id="imagesPreviewContainer"></div>
@@ -327,12 +375,37 @@
     </div>
 
     <div id="results">
-        <h2 style="margin-bottom: 25px; color: #1e293b;">📋 نتائح البحث:</h2>
+        <h2 style="margin-bottom: 25px; color: var(--text);">📋 نتائح البحث:</h2>
         <div id="allResultsList"></div>
     </div>
 </div>
 
 <script>
+    // --- برمجة الدارك مود ---
+    const themeToggle = document.getElementById('themeToggle');
+    
+    // فحص الاختيار المحفوظ من قبل كده
+    const currentTheme = localStorage.getItem('theme');
+    if (currentTheme === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+        themeToggle.innerText = '☀️';
+    }
+
+    // زرار التبديل
+    themeToggle.addEventListener('click', () => {
+        let theme = document.body.getAttribute('data-theme');
+        if (theme === 'dark') {
+            document.body.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            themeToggle.innerText = '🌙';
+        } else {
+            document.body.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            themeToggle.innerText = '☀️';
+        }
+    });
+    // ------------------------
+
     const fileInput = document.getElementById('fileInput');
     const dropZone = document.getElementById('dropZone');
     const prompt = document.getElementById('prompt');
@@ -351,7 +424,7 @@
             previewContainer.innerHTML = '';
             previewContainer.style.display = 'grid';
             searchBtn.disabled = false;
-            enginesBar.style.display = 'none'; // نخفي الشريط مؤقتا
+            enginesBar.style.display = 'none';
             
             if(files.length > 1){
                 searchBtn.innerText = `ابدأ البحث عن ${files.length} صور سوا`;
@@ -415,7 +488,6 @@
                 
                 const data = await response.json();
 
-                // تحديث صورة الهيدر
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = (event) => {
@@ -423,7 +495,6 @@
                     titleBox.innerHTML = `<img src="${event.target.result}" alt="thumb"> <span>نتائج الصورة رقم ${index + 1}</span>`;
                 };
 
-                // لو صورة واحدة بس، هنظهر الشريط الكبير بتاع زمان
                 if (files.length === 1 && data.image_url) {
                     document.getElementById('googleLink').href = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(data.image_url)}`;
                     document.getElementById('bingLink').href = `https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIIRP&sbisrc=UrlPaste&q=imgurl=${encodeURIComponent(data.image_url)}`;
@@ -435,7 +506,6 @@
                     enginesBar.style.display = 'flex';
                 }
 
-                // لو أكتر من صورة، هنضيف الزراير الملونة الصغيرة جوه الهيدر بتاع كل صورة
                 if (files.length > 1 && data.image_url) {
                     const sectionHeader = document.getElementById(`section-header-${index}`);
                     sectionHeader.innerHTML += `
