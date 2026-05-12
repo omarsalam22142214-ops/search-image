@@ -32,7 +32,7 @@
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             width: 100%;
-            max-width: 700px;
+            max-width: 800px;
             text-align: center;
         }
 
@@ -41,7 +41,7 @@
 
         .upload-box {
             border: 2px dashed #cbd5e1;
-            padding: 40px 20px;
+            padding: 20px;
             border-radius: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -54,14 +54,49 @@
             background: #eff6ff;
         }
 
-        #imagePreview {
-            max-width: 100%;
-            max-height: 250px;
+        #imagesPreviewContainer {
             display: none;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
             margin: 15px auto;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 100%;
+            justify-content: center;
         }
+
+        .preview-img-wrapper {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .preview-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .loader-on-img {
+            display: none;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255,255,255,0.7);
+            align-items: center; justify-content: center;
+            border-radius: 8px;
+        }
+
+        .mini-loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: mini-spin 1s linear infinite;
+        }
+        @keyframes mini-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .btn {
             background: var(--primary);
@@ -79,7 +114,7 @@
         .btn:hover { background: var(--primary-hover); }
         .btn:disabled { background: #94a3b8; cursor: not-allowed; }
 
-        /* شريط محركات البحث */
+        /* شريط المحركات الكبير (بيظهر في حالة صورة واحدة بس) */
         .engines-bar {
             display: none;
             justify-content: center;
@@ -124,7 +159,7 @@
         .engine-tab.bing:hover { background: #0089D6; box-shadow: 0 4px 10px rgba(0,137,214,0.3); }
         .engine-tab.yandex:hover { background: #FC3F1D; box-shadow: 0 4px 10px rgba(252,63,29,0.3); }
         .engine-tab.pinterest:hover { background: #E60023; box-shadow: 0 4px 10px rgba(230,0,35,0.3); }
-        .engine-tab.tineye:hover { background: #111827; box-shadow: 0 4px 10px rgba(17,24,39,0.3); } /* لون TinEye */
+        .engine-tab.tineye:hover { background: #111827; box-shadow: 0 4px 10px rgba(17,24,39,0.3); }
 
         #results {
             margin-top: 10px;
@@ -132,6 +167,61 @@
             display: none;
             width: 100%;
         }
+
+        #allResultsList {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .image-results-section {
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+        }
+        .image-results-section:last-child { border-bottom: none; }
+
+        /* هيدر كل صورة اللي هنحط فيه الزراير الصغيرة */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .header-title-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+        .header-title-box img { width: 30px; height: 30px; border-radius: 4px; object-fit: cover; }
+
+        /* الزراير المصغرة للبحث الجماعي */
+        .mini-engines {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .mini-btn {
+            padding: 5px 10px;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .mini-btn:hover { opacity: 0.85; transform: scale(1.05); }
+        .bg-google { background: #4285F4; }
+        .bg-bing { background: #0089D6; }
+        .bg-yandex { background: #FC3F1D; }
+        .bg-tineye { background: #111827; }
+        .bg-pinterest { background: #E60023; }
 
         .result-card {
             display: flex;
@@ -194,38 +284,24 @@
 
         .result-link:hover { background: #dbeafe; }
         .img-link:hover { background: #d1fae5; }
-
-        .loader {
-            display: none;
-            margin: 20px auto;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--primary);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>الباحث الذكي عن الصور</h1>
-    <p class="subtitle">ارفع صورتك وابحث عنها في كل مكان</p>
+    <p class="subtitle">ارفع صورة أو كذا صورة سوا، وهنجيبلك المواقع اللي موجودة فيها</p>
 
     <div class="upload-box" id="dropZone">
         <div id="prompt">
             <svg style="width:48px;height:48px;color:#94a3b8;margin:auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            <p style="margin-top:10px">اضغط هنا لاختيار الصورة</p>
+            <p style="margin-top:10px; font-weight: bold;">اضغط هنا لاختيار الصورة أو الصور سوا</p>
         </div>
-        <input type="file" id="fileInput" hidden accept="image/*">
-        <img id="imagePreview" src="" alt="Preview">
+        <input type="file" id="fileInput" hidden accept="image/*" multiple>
+        <div id="imagesPreviewContainer"></div>
     </div>
 
-    <button id="searchBtn" class="btn" disabled>ابدأ البحث الآن</button>
-    <div class="loader" id="loader"></div>
+    <button id="searchBtn" class="btn" disabled>ابدأ البحث</button>
 
     <div class="engines-bar" id="enginesBar">
         <a id="googleLink" href="#" target="_blank" class="engine-tab google">
@@ -251,104 +327,165 @@
     </div>
 
     <div id="results">
-        <h3 style="margin-bottom: 15px; color: #334155;">نتائج جوجل المطابقة:</h3>
-        <div id="resultsList"></div>
+        <h2 style="margin-bottom: 25px; color: #1e293b;">📋 نتائح البحث:</h2>
+        <div id="allResultsList"></div>
     </div>
 </div>
 
 <script>
     const fileInput = document.getElementById('fileInput');
     const dropZone = document.getElementById('dropZone');
-    const imagePreview = document.getElementById('imagePreview');
     const prompt = document.getElementById('prompt');
     const searchBtn = document.getElementById('searchBtn');
     const resultsDiv = document.getElementById('results');
-    const resultsList = document.getElementById('resultsList');
-    const loader = document.getElementById('loader');
+    const allResultsList = document.getElementById('allResultsList');
+    const previewContainer = document.getElementById('imagesPreviewContainer');
     const enginesBar = document.getElementById('enginesBar');
 
     dropZone.onclick = () => fileInput.click();
 
     fileInput.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                imagePreview.src = event.target.result;
-                imagePreview.style.display = 'block';
-                prompt.style.display = 'none';
-                searchBtn.disabled = false;
-                enginesBar.style.display = 'none';
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            prompt.style.display = 'none';
+            previewContainer.innerHTML = '';
+            previewContainer.style.display = 'grid';
+            searchBtn.disabled = false;
+            enginesBar.style.display = 'none'; // نخفي الشريط مؤقتا
+            
+            if(files.length > 1){
+                searchBtn.innerText = `ابدأ البحث عن ${files.length} صور سوا`;
+            } else {
+                searchBtn.innerText = 'ابدأ البحث الآن';
             }
-            reader.readAsDataURL(file);
+
+            Array.from(files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'preview-img-wrapper';
+                    wrapper.id = `preview-img-wrapper-${index}`;
+                    wrapper.innerHTML = `
+                        <img src="${event.target.result}" alt="Preview ${index}" class="preview-img">
+                        <div class="loader-on-img" id="loader-on-img-${index}">
+                            <div class="mini-loader"></div>
+                        </div>
+                    `;
+                    previewContainer.appendChild(wrapper);
+                }
+                reader.readAsDataURL(file);
+            });
+            resultsDiv.style.display = 'none';
         }
     };
 
     searchBtn.onclick = async () => {
-        const file = fileInput.files[0];
-        const formData = new FormData();
-        formData.append('image', file);
+        const files = fileInput.files;
+        if (!files || files.length === 0) return;
 
-        searchBtn.style.display = 'none';
-        loader.style.display = 'block';
-        resultsDiv.style.display = 'none';
+        searchBtn.disabled = true;
+        searchBtn.innerText = 'جاري البحث... قد يستغرق بعض الوقت...';
+        allResultsList.innerHTML = '';
+        resultsDiv.style.display = 'block';
         enginesBar.style.display = 'none';
 
-        try {
-            const response = await fetch('https://yjhgvc.pythonanywhere.com/search-image', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const data = await response.json();
+        const searchOneImage = async (file, index) => {
+            const formData = new FormData();
+            formData.append('image', file);
 
-            loader.style.display = 'none';
-            searchBtn.style.display = 'block';
+            const imgLoader = document.getElementById(`loader-on-img-${index}`);
+            if(imgLoader) imgLoader.style.display = 'flex';
 
-            if (data.image_url) {
-                // تفعيل كل الروابط بمجرد رفع الصورة
-                document.getElementById('googleLink').href = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(data.image_url)}`;
-                document.getElementById('bingLink').href = `https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIIRP&sbisrc=UrlPaste&q=imgurl:${encodeURIComponent(data.image_url)}`;
-                document.getElementById('yandexLink').href = `https://yandex.com/images/search?rpt=imageview&url=${encodeURIComponent(data.image_url)}`;
+            let imageSectionHTML = `<div class="image-results-section" id="results-section-${index}">
+                                    <div class="section-header" id="section-header-${index}">
+                                        <div class="header-title-box">
+                                            <span id="thumb-placeholder-${index}">⌛</span>
+                                            <span>جاري البحث عن الصورة رقم ${index + 1}...</span>
+                                        </div>
+                                    </div>
+                                    <div id="cards-container-${index}"></div>
+                                  </div>`;
+            allResultsList.innerHTML += imageSectionHTML;
+
+            try {
+                const response = await fetch('https://yjhgvc.pythonanywhere.com/search-image', {
+                    method: 'POST',
+                    body: formData
+                });
                 
-                // رابط TinEye الجديد
-                document.getElementById('tineyeLink').href = `https://tineye.com/search?url=${encodeURIComponent(data.image_url)}`;
-                
-                // رسالة Pinterest المتظبطة
-                document.getElementById('pinterestLink').onclick = function() {
-                    alert("يا هندسة، بينتريست مبيسمحش بالبحث برابط مباشر من بره زي باقي المواقع.\n\nهيفتحلك الموقع بتاعهم دلوقتي، كل اللي هتعمله إنك تدوس على علامة الكاميرا 📷 في مربع البحث وتختار صورتك اللي عايز تبحث عنها.");
+                const data = await response.json();
+
+                // تحديث صورة الهيدر
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const titleBox = document.querySelector(`#section-header-${index} .header-title-box`);
+                    titleBox.innerHTML = `<img src="${event.target.result}" alt="thumb"> <span>نتائج الصورة رقم ${index + 1}</span>`;
                 };
-                
-                enginesBar.style.display = 'flex';
-            }
 
-            resultsDiv.style.display = 'block';
-            resultsList.innerHTML = '';
+                // لو صورة واحدة بس، هنظهر الشريط الكبير بتاع زمان
+                if (files.length === 1 && data.image_url) {
+                    document.getElementById('googleLink').href = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(data.image_url)}`;
+                    document.getElementById('bingLink').href = `https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIIRP&sbisrc=UrlPaste&q=imgurl=${encodeURIComponent(data.image_url)}`;
+                    document.getElementById('yandexLink').href = `https://yandex.com/images/search?rpt=imageview&url=${encodeURIComponent(data.image_url)}`;
+                    document.getElementById('tineyeLink').href = `https://tineye.com/search?url=${encodeURIComponent(data.image_url)}`;
+                    document.getElementById('pinterestLink').onclick = function() {
+                        alert("يا هندسة، بينتريست مبيسمحش بالبحث برابط مباشر من بره زي باقي المواقع.\n\nهيفتحلك الموقع بتاعهم دلوقتي، كل اللي هتعمله إنك تدوس على علامة الكاميرا 📷 في مربع البحث وتختار صورتك اللي عايز تبحث عنها.");
+                    };
+                    enginesBar.style.display = 'flex';
+                }
 
-            if (data.status === "success" && data.matches && data.matches.length > 0) {
-                data.matches.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = 'result-card';
-                    card.innerHTML = `
-                        <img src="${item.thumbnail}" alt="thumb" class="result-image">
-                        <div class="result-info">
-                            <div class="result-title">${item.title}</div>
-                            <div class="buttons-container">
-                                <a href="${item.link}" target="_blank" class="result-link">🔗 زيارة الموقع</a>
-                                <a href="${item.full_image}" target="_blank" class="result-link img-link">🖼️ فتح الصورة</a>
-                            </div>
+                // لو أكتر من صورة، هنضيف الزراير الملونة الصغيرة جوه الهيدر بتاع كل صورة
+                if (files.length > 1 && data.image_url) {
+                    const sectionHeader = document.getElementById(`section-header-${index}`);
+                    sectionHeader.innerHTML += `
+                        <div class="mini-engines">
+                            <a href="https://lens.google.com/uploadbyurl?url=${encodeURIComponent(data.image_url)}" target="_blank" class="mini-btn bg-google">Google</a>
+                            <a href="https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIIRP&sbisrc=UrlPaste&q=imgurl=${encodeURIComponent(data.image_url)}" target="_blank" class="mini-btn bg-bing">Bing</a>
+                            <a href="https://yandex.com/images/search?rpt=imageview&url=${encodeURIComponent(data.image_url)}" target="_blank" class="mini-btn bg-yandex">Yandex</a>
+                            <a href="https://tineye.com/search?url=${encodeURIComponent(data.image_url)}" target="_blank" class="mini-btn bg-tineye">TinEye</a>
+                            <a href="https://www.pinterest.com/" target="_blank" onclick="alert('يا هندسة، بينتريست مبيسمحش بالبحث برابط مباشر من بره زي باقي المواقع.\\n\\nهيفتحلك الموقع بتاعهم دلوقتي، كل اللي هتعمله إنك تدوس على علامة الكاميرا 📷 في مربع البحث وتختار صورتك اللي عايز تبحث عنها.');" class="mini-btn bg-pinterest">Pinterest</a>
                         </div>
                     `;
-                    resultsList.appendChild(card);
-                });
-            } else {
-                resultsList.innerHTML = `<p style="text-align:center; color: #ef4444; font-weight: bold;">${data.error || 'ملقناش نتايج للصورة دي في جوجل'}</p>`;
+                }
+
+                const cardsContainer = document.getElementById(`cards-container-${index}`);
+                cardsContainer.innerHTML = ''; 
+
+                if (data.status === "success" && data.matches && data.matches.length > 0) {
+                    data.matches.forEach(item => {
+                        const cardHTML = `
+                            <div class="result-card">
+                                <img src="${item.thumbnail}" alt="thumb" class="result-image">
+                                <div class="result-info">
+                                    <div class="result-title">${item.title}</div>
+                                    <div class="buttons-container">
+                                        <a href="${item.link}" target="_blank" class="result-link">🔗 زيارة الموقع</a>
+                                        <a href="${item.full_image}" target="_blank" class="result-link img-link">🖼️ فتح الصورة</a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        cardsContainer.innerHTML += cardHTML;
+                    });
+                } else {
+                    cardsContainer.innerHTML = `<p style="text-align:center; color: #ef4444; font-weight: bold; margin-top: 10px;">ملقناش نتايج للصورة دي في جوجل</p>`;
+                }
+
+            } catch (err) {
+                const section = document.getElementById(`results-section-${index}`);
+                section.innerHTML = `<p style="text-align:center; color: #ef4444; font-weight: bold;">حصلت مشكلة في الاتصال بالسيرفر في الصورة دي.</p>`;
+            } finally {
+                if(imgLoader) imgLoader.style.display = 'none';
             }
-        } catch (err) {
-            loader.style.display = 'none';
-            searchBtn.style.display = 'block';
-            alert('حصلت مشكلة في الاتصال بالسيرفر. اتأكد إنك عملت Reload للسيرفر على PythonAnywhere!');
+        };
+
+        for (let i = 0; i < files.length; i++) {
+            await searchOneImage(files[i], i);
         }
+
+        searchBtn.disabled = false;
+        searchBtn.innerText = files.length > 1 ? `ابدأ البحث عن ${files.length} صور سوا` : 'ابدأ البحث الآن';
     };
 </script>
 
