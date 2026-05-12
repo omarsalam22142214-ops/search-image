@@ -79,8 +79,36 @@
         .btn:hover { background: var(--primary-hover); }
         .btn:disabled { background: #94a3b8; cursor: not-allowed; }
 
+        /* شريط محركات البحث الجديد */
+        .engines-bar {
+            display: none;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .engine-tab {
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            flex: 1;
+            min-width: 100px;
+            text-align: center;
+            transition: 0.3s;
+            font-size: 0.95rem;
+        }
+        
+        .engine-tab.bing { background: #0089D6; }
+        .engine-tab.yandex { background: #FC3F1D; }
+        .engine-tab.google { background: #4285F4; }
+        .engine-tab:hover { opacity: 0.9; transform: translateY(-2px); }
+
         #results {
-            margin-top: 30px;
+            margin-top: 10px;
             text-align: right;
             display: none;
             width: 100%;
@@ -124,6 +152,7 @@
             display: flex;
             gap: 15px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .result-link {
@@ -134,13 +163,18 @@
             display: flex;
             align-items: center;
             gap: 5px;
+            background: #eff6ff;
+            padding: 5px 10px;
+            border-radius: 6px;
         }
         
         .img-link {
-            color: #059669; /* لون أخضر شيك لزرار الصورة */
+            color: #059669;
+            background: #ecfdf5;
         }
 
-        .result-link:hover { text-decoration: underline; }
+        .result-link:hover { background: #dbeafe; }
+        .img-link:hover { background: #d1fae5; }
 
         .loader {
             display: none;
@@ -160,7 +194,7 @@
 
 <div class="container">
     <h1>الباحث الذكي عن الصور</h1>
-    <p class="subtitle">ارفع صورتك وهنجيبلك المواقع اللي موجودة فيها بجد</p>
+    <p class="subtitle">ارفع صورتك وابحث عنها في كل مكان</p>
 
     <div class="upload-box" id="dropZone">
         <div id="prompt">
@@ -174,8 +208,14 @@
     <button id="searchBtn" class="btn" disabled>ابدأ البحث الآن</button>
     <div class="loader" id="loader"></div>
 
+    <div class="engines-bar" id="enginesBar">
+        <a id="googleLink" href="#" target="_blank" class="engine-tab google">Google</a>
+        <a id="bingLink" href="#" target="_blank" class="engine-tab bing">Bing</a>
+        <a id="yandexLink" href="#" target="_blank" class="engine-tab yandex">Yandex</a>
+    </div>
+
     <div id="results">
-        <h3 style="margin-bottom: 15px;">نتائج البحث الحقيقية:</h3>
+        <h3 style="margin-bottom: 15px; color: #334155;">نتائج جوجل المطابقة:</h3>
         <div id="resultsList"></div>
     </div>
 </div>
@@ -189,6 +229,7 @@
     const resultsDiv = document.getElementById('results');
     const resultsList = document.getElementById('resultsList');
     const loader = document.getElementById('loader');
+    const enginesBar = document.getElementById('enginesBar');
 
     dropZone.onclick = () => fileInput.click();
 
@@ -201,6 +242,7 @@
                 imagePreview.style.display = 'block';
                 prompt.style.display = 'none';
                 searchBtn.disabled = false;
+                enginesBar.style.display = 'none'; // نخفي الشريط القديم
             }
             reader.readAsDataURL(file);
         }
@@ -214,6 +256,7 @@
         searchBtn.style.display = 'none';
         loader.style.display = 'block';
         resultsDiv.style.display = 'none';
+        enginesBar.style.display = 'none';
 
         try {
             const response = await fetch('https://yjhgvc.pythonanywhere.com/search-image', {
@@ -225,14 +268,22 @@
 
             loader.style.display = 'none';
             searchBtn.style.display = 'block';
+
+            // تفعيل زراير محركات البحث لو الصورة اترفع بنجاح
+            if (data.image_url) {
+                document.getElementById('googleLink').href = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(data.image_url)}`;
+                document.getElementById('bingLink').href = `https://www.bing.com/images/search?view=detailv2&iss=sbi&q=imgurl:${encodeURIComponent(data.image_url)}`;
+                document.getElementById('yandexLink').href = `https://yandex.com/images/search?rpt=imageview&url=${encodeURIComponent(data.image_url)}`;
+                enginesBar.style.display = 'flex';
+            }
+
             resultsDiv.style.display = 'block';
             resultsList.innerHTML = '';
 
-            if (data.status === "success" && data.matches.length > 0) {
+            if (data.status === "success" && data.matches && data.matches.length > 0) {
                 data.matches.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'result-card';
-                    // ضفنا هنا الزرارين جنب بعض
                     card.innerHTML = `
                         <img src="${item.thumbnail}" alt="thumb" class="result-image">
                         <div class="result-info">
@@ -246,7 +297,7 @@
                     resultsList.appendChild(card);
                 });
             } else {
-                resultsList.innerHTML = `<p style="text-align:center; color: #ef4444;">${data.error || 'ملقناش نتايج للصورة دي في جوجل'}</p>`;
+                resultsList.innerHTML = `<p style="text-align:center; color: #ef4444; font-weight: bold;">${data.error || 'ملقناش نتايج للصورة دي في جوجل'}</p>`;
             }
         } catch (err) {
             loader.style.display = 'none';
