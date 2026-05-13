@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الباحث الذكي عن الصور</title>
+    
+    <!-- مكتبة Cropper.js لخاصية القص -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
     <style>
         :root {
             /* ألوان اللايت مود الأساسية */
@@ -92,6 +97,7 @@
             transition: all 0.3s ease;
             margin-bottom: 20px;
             background: var(--box-bg);
+            position: relative; /* مهم عشان الأزرار اللي فوق الصور */
         }
 
         .upload-box:hover {
@@ -101,8 +107,8 @@
 
         #imagesPreviewContainer {
             display: none;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
             margin: 15px auto;
             max-width: 100%;
             justify-content: center;
@@ -123,6 +129,34 @@
             object-fit: cover;
         }
 
+        /* أزرار الحذف والقص على الصورة */
+        .img-actions {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .action-btn {
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        .action-btn:hover { background: var(--primary); transform: scale(1.1); }
+        .action-btn.remove-btn:hover { background: #ef4444; }
+
         .loader-on-img {
             display: none;
             position: absolute;
@@ -131,6 +165,7 @@
             background: rgba(255,255,255,0.7);
             align-items: center; justify-content: center;
             border-radius: 8px;
+            z-index: 20;
         }
         [data-theme="dark"] .loader-on-img { background: rgba(0,0,0,0.6); }
 
@@ -159,6 +194,9 @@
 
         .btn:hover { background: var(--primary-hover); }
         .btn:disabled { background: var(--subtitle); cursor: not-allowed; }
+        
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
 
         .engines-bar {
             display: none;
@@ -265,7 +303,7 @@
         .bg-google { background: #4285F4; }
         .bg-bing { background: #0089D6; }
         .bg-yandex { background: #FC3F1D; }
-        .bg-tineye { background: #8b5cf6; } /* لون أفتح شوية للدارك مود */
+        .bg-tineye { background: #8b5cf6; } 
         .bg-pinterest { background: #E60023; }
 
         .result-card {
@@ -330,6 +368,49 @@
 
         .result-link:hover { background: var(--primary-hover); transform: translateY(-1px); }
         .img-link:hover { background: #047857; transform: translateY(-1px); }
+
+        /* ستايل شاشة القص (Crop Modal) */
+        .crop-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .crop-container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .img-container {
+            width: 100%;
+            max-height: 60vh;
+            margin-bottom: 20px;
+        }
+        
+        .img-container img {
+            max-width: 100%;
+            display: block;
+        }
+
+        .crop-actions {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+        }
+
     </style>
 </head>
 <body>
@@ -380,18 +461,29 @@
     </div>
 </div>
 
+<!-- شاشة القص المنبثقة -->
+<div class="crop-modal" id="cropModal">
+    <div class="crop-container">
+        <h3 style="margin-bottom: 15px; color: var(--text);">قص الصورة ✂️</h3>
+        <div class="img-container">
+            <img id="imageToCrop" src="" alt="صورة للقص">
+        </div>
+        <div class="crop-actions">
+            <button class="btn btn-danger" id="cancelCropBtn">إلغاء</button>
+            <button class="btn" id="saveCropBtn">حفظ التعديل ✔️</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // --- برمجة الدارك مود ---
     const themeToggle = document.getElementById('themeToggle');
-    
-    // فحص الاختيار المحفوظ من قبل كده
     const currentTheme = localStorage.getItem('theme');
     if (currentTheme === 'dark') {
         document.body.setAttribute('data-theme', 'dark');
         themeToggle.innerText = '☀️';
     }
 
-    // زرار التبديل
     themeToggle.addEventListener('click', () => {
         let theme = document.body.getAttribute('data-theme');
         if (theme === 'dark') {
@@ -415,46 +507,140 @@
     const previewContainer = document.getElementById('imagesPreviewContainer');
     const enginesBar = document.getElementById('enginesBar');
 
-    dropZone.onclick = () => fileInput.click();
+    // مصفوفة هنحفظ فيها الملفات عشان نقدر نحذف ونعدل (قص) براحتنا
+    let selectedFiles = []; 
+    let cropper; // متغير لمكتبة القص
+    let currentCropIndex = -1; // لمعرفة أي صورة بنعملها قص حالياً
+
+    // فتح نافذة اختيار الملفات
+    dropZone.onclick = (e) => {
+        // عشان لو داس على زرار الحذف أو القص جوه المنطقة دي ميفتحش نافذة اختيار الملفات
+        if (e.target.closest('.action-btn')) return; 
+        fileInput.click();
+    };
 
     fileInput.onchange = (e) => {
         const files = e.target.files;
         if (files && files.length > 0) {
-            prompt.style.display = 'none';
-            previewContainer.innerHTML = '';
-            previewContainer.style.display = 'grid';
-            searchBtn.disabled = false;
-            enginesBar.style.display = 'none';
+            // بنضيف الملفات الجديدة للمصفوفة بتاعتنا
+            Array.from(files).forEach(file => selectedFiles.push(file));
             
-            if(files.length > 1){
-                searchBtn.innerText = `ابدأ البحث عن ${files.length} صور سوا`;
-            } else {
-                searchBtn.innerText = 'ابدأ البحث الآن';
-            }
-
-            Array.from(files).forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'preview-img-wrapper';
-                    wrapper.id = `preview-img-wrapper-${index}`;
-                    wrapper.innerHTML = `
-                        <img src="${event.target.result}" alt="Preview ${index}" class="preview-img">
-                        <div class="loader-on-img" id="loader-on-img-${index}">
-                            <div class="mini-loader"></div>
-                        </div>
-                    `;
-                    previewContainer.appendChild(wrapper);
-                }
-                reader.readAsDataURL(file);
-            });
-            resultsDiv.style.display = 'none';
+            // بنفضي الـ input عشان لو حب يختار نفس الصورة تاني تنزل عادي
+            fileInput.value = '';
+            
+            // بنرسم المعاينة
+            renderPreviews();
         }
     };
 
+    // دالة بترسم الصور الموجودة في المصفوفة
+    function renderPreviews() {
+        previewContainer.innerHTML = '';
+        resultsDiv.style.display = 'none';
+        enginesBar.style.display = 'none';
+
+        if (selectedFiles.length === 0) {
+            prompt.style.display = 'block';
+            previewContainer.style.display = 'none';
+            searchBtn.disabled = true;
+            searchBtn.innerText = 'ابدأ البحث';
+            return;
+        }
+
+        prompt.style.display = 'none';
+        previewContainer.style.display = 'grid';
+        searchBtn.disabled = false;
+        searchBtn.innerText = selectedFiles.length > 1 ? `ابدأ البحث عن ${selectedFiles.length} صور سوا` : 'ابدأ البحث الآن';
+
+        selectedFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'preview-img-wrapper';
+                wrapper.id = `preview-img-wrapper-${index}`;
+                
+                // ضفنا هنا أزرار الـ X والمقص
+                wrapper.innerHTML = `
+                    <img src="${event.target.result}" alt="Preview ${index}" class="preview-img">
+                    <div class="img-actions">
+                        <button class="action-btn" onclick="openCropper(event, ${index})" title="قص الصورة">✂️</button>
+                        <button class="action-btn remove-btn" onclick="removeImage(event, ${index})" title="إلغاء الصورة">❌</button>
+                    </div>
+                    <div class="loader-on-img" id="loader-on-img-${index}">
+                        <div class="mini-loader"></div>
+                    </div>
+                `;
+                previewContainer.appendChild(wrapper);
+            }
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // دالة حذف الصورة
+    window.removeImage = (e, index) => {
+        e.stopPropagation(); // منع انتقال الضغطة للـ dropZone
+        selectedFiles.splice(index, 1); // شيلها من المصفوفة
+        renderPreviews(); // تحديث العرض
+    };
+
+    // دالة فتح شاشة القص
+    window.openCropper = (e, index) => {
+        e.stopPropagation();
+        currentCropIndex = index;
+        const file = selectedFiles[index];
+        const reader = new FileReader();
+        
+        reader.onload = (event) => {
+            const cropModal = document.getElementById('cropModal');
+            const imageToCrop = document.getElementById('imageToCrop');
+            imageToCrop.src = event.target.result;
+            cropModal.style.display = 'flex';
+
+            // تدمير أي Cropper قديم شغال وبداية واحد جديد
+            if (cropper) { cropper.destroy(); }
+            
+            cropper = new Cropper(imageToCrop, {
+                viewMode: 1,
+                autoCropArea: 1,
+                responsive: true,
+            });
+        }
+        reader.readAsDataURL(file);
+    };
+
+    // إلغاء القص وقفل الشاشة
+    document.getElementById('cancelCropBtn').onclick = () => {
+        document.getElementById('cropModal').style.display = 'none';
+        if (cropper) { cropper.destroy(); cropper = null; }
+    };
+
+    // حفظ نتيجة القص
+    document.getElementById('saveCropBtn').onclick = () => {
+        if (!cropper) return;
+        
+        // استخراج الصورة بعد القص وتحويلها لملف
+        cropper.getCroppedCanvas().toBlob((blob) => {
+            if (!blob) return;
+            
+            const originalFile = selectedFiles[currentCropIndex];
+            // إنشاء ملف جديد بالامتداد الجديد (استخدمت jpeg عشان خفيفة)
+            const croppedFile = new File([blob], originalFile.name, { type: 'image/jpeg', lastModified: new Date().getTime() });
+            
+            // استبدال الصورة القديمة بالصورة المقصوصة في المصفوفة
+            selectedFiles[currentCropIndex] = croppedFile;
+            
+            // قفل النافذة وتحديث العرض
+            document.getElementById('cropModal').style.display = 'none';
+            cropper.destroy();
+            cropper = null;
+            renderPreviews();
+            
+        }, 'image/jpeg', 0.9);
+    };
+
+    // دالة البحث
     searchBtn.onclick = async () => {
-        const files = fileInput.files;
-        if (!files || files.length === 0) return;
+        if (selectedFiles.length === 0) return;
 
         searchBtn.disabled = true;
         searchBtn.innerText = 'جاري البحث... قد يستغرق بعض الوقت...';
@@ -495,7 +681,7 @@
                     titleBox.innerHTML = `<img src="${event.target.result}" alt="thumb"> <span>نتائج الصورة رقم ${index + 1}</span>`;
                 };
 
-                if (files.length === 1 && data.image_url) {
+                if (selectedFiles.length === 1 && data.image_url) {
                     document.getElementById('googleLink').href = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(data.image_url)}`;
                     document.getElementById('bingLink').href = `https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIIRP&sbisrc=UrlPaste&q=imgurl=${encodeURIComponent(data.image_url)}`;
                     document.getElementById('yandexLink').href = `https://yandex.com/images/search?rpt=imageview&url=${encodeURIComponent(data.image_url)}`;
@@ -506,7 +692,7 @@
                     enginesBar.style.display = 'flex';
                 }
 
-                if (files.length > 1 && data.image_url) {
+                if (selectedFiles.length > 1 && data.image_url) {
                     const sectionHeader = document.getElementById(`section-header-${index}`);
                     sectionHeader.innerHTML += `
                         <div class="mini-engines">
@@ -550,12 +736,13 @@
             }
         };
 
-        for (let i = 0; i < files.length; i++) {
-            await searchOneImage(files[i], i);
+        // الدوران على المصفوفة بتاعتنا بدل الـ fileInput
+        for (let i = 0; i < selectedFiles.length; i++) {
+            await searchOneImage(selectedFiles[i], i);
         }
 
         searchBtn.disabled = false;
-        searchBtn.innerText = files.length > 1 ? `ابدأ البحث عن ${files.length} صور سوا` : 'ابدأ البحث الآن';
+        searchBtn.innerText = selectedFiles.length > 1 ? `ابدأ البحث عن ${selectedFiles.length} صور سوا` : 'ابدأ البحث الآن';
     };
 </script>
 
